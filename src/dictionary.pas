@@ -69,32 +69,32 @@ procedure FreeSubterm(Subterm: PSubterm);
 var
   i: Integer;
 begin
-  if Subterm = nil then
-    Exit;
-  
-  // Освобождаем память, занятую дочерними подтерминами
-  for i := 0 to Subterm^.Children^.Count - 1 do
-    FreeSubterm(Subterm^.Children^.Items[i]);
-  
-  // Освобождаем память, занятую списками
-  FreeStringList(Subterm^.ParentTerms);
-  FreeSubtermList(Subterm^.Children);
-  
-  // Освобождаем память, занятую самим подтермином
-  Dispose(Subterm);
+  if Subterm <> nil then
+  begin
+    // Освобождаем память, занятую дочерними подтерминами
+    for i := 0 to Subterm^.Children^.Count - 1 do
+      FreeSubterm(Subterm^.Children^.Items[i]);
+    
+    // Освобождаем память, занятую списками
+    FreeStringList(Subterm^.ParentTerms);
+    FreeSubtermList(Subterm^.Children);
+    
+    // Освобождаем память, занятую самим подтермином
+    Dispose(Subterm);
+  end;
 end;
 
 // Освобождение памяти, занятой термином и его подтерминами
 procedure FreeTerm(Term: PTerm);
 begin
-  if Term = nil then
-    Exit;
-  
-  // Освобождаем память, занятую списком подтерминов
-  FreeSubtermList(Term^.Subterms);
-  
-  // Освобождаем память, занятую самим термином
-  Dispose(Term);
+  if Term <> nil then
+  begin
+    // Освобождаем память, занятую списком подтерминов
+    FreeSubtermList(Term^.Subterms);
+    
+    // Освобождаем память, занятую самим термином
+    Dispose(Term);
+  end;
 end;
 
 // Освобождение памяти, занятой словарем
@@ -136,21 +136,23 @@ function FindTerm(const Dict: TDictionary; const Name: string): PTerm;
 var
   index: Integer;
   current: PTerm;
+  found: Boolean;
 begin
   index := HashFunction(Name);
   current := Dict.Terms[index];
+  found := False;
+  FindTerm := nil;
   
-  while current <> nil do
+  while (current <> nil) and not found do
   begin
     if current^.Name = Name then
     begin
       FindTerm := current;
-      Exit;
+      found := True;
     end;
-    current := current^.Next;
+    if not found then
+      current := current^.Next;
   end;
-  
-  FindTerm := nil;
 end;
 
 // Поиск подтермина по имени
@@ -158,21 +160,23 @@ function FindSubterm(const Dict: TDictionary; const Name: string): PSubterm;
 var
   index: Integer;
   current: PSubterm;
+  found: Boolean;
 begin
   index := HashFunction(Name);
   current := Dict.Subterms[index];
+  found := False;
+  FindSubterm := nil;
   
-  while current <> nil do
+  while (current <> nil) and not found do
   begin
     if current^.Name = Name then
     begin
       FindSubterm := current;
-      Exit;
+      found := True;
     end;
-    current := current^.Next;
+    if not found then
+      current := current^.Next;
   end;
-  
-  FindSubterm := nil;
 end;
 
 // Добавление термина
@@ -188,16 +192,17 @@ begin
   begin
     // Если термин уже существует, обновляем номер страницы
     term^.PageNumber := PageNumber;
-    Exit;
+  end
+  else
+  begin
+    // Создаем новый термин
+    newTerm := CreateTerm(Name, PageNumber);
+    
+    // Добавляем термин в хеш-таблицу
+    index := HashFunction(Name);
+    newTerm^.Next := Dict.Terms[index];
+    Dict.Terms[index] := newTerm;
   end;
-  
-  // Создаем новый термин
-  newTerm := CreateTerm(Name, PageNumber);
-  
-  // Добавляем термин в хеш-таблицу
-  index := HashFunction(Name);
-  newTerm^.Next := Dict.Terms[index];
-  Dict.Terms[index] := newTerm;
 end;
 
 // Добавление подтермина к термину
@@ -210,35 +215,35 @@ var
 begin
   // Находим термин
   term := FindTerm(Dict, TermName);
-  if term = nil then
-    Exit;
-  
-  // Проверяем, существует ли уже подтермин с таким именем
-  subterm := FindSubterm(Dict, SubtermName);
-  
-  if subterm = nil then
+  if term <> nil then
   begin
-    // Создаем новый подтермин
-    newSubterm := CreateSubterm(SubtermName, PageNumber);
+    // Проверяем, существует ли уже подтермин с таким именем
+    subterm := FindSubterm(Dict, SubtermName);
     
-    // Добавляем подтермин в хеш-таблицу
-    index := HashFunction(SubtermName);
-    newSubterm^.Next := Dict.Subterms[index];
-    Dict.Subterms[index] := newSubterm;
-    
-    // Добавляем имя термина в список родительских терминов подтермина
-    AddString(newSubterm^.ParentTerms, TermName);
-    
-    // Добавляем подтермин в список подтерминов термина
-    AddSubtermToList(term^.Subterms, newSubterm);
-  end
-  else
-  begin
-    // Если подтермин уже существует, добавляем имя термина в список родительских терминов
-    AddString(subterm^.ParentTerms, TermName);
-    
-    // Добавляем подтермин в список подтерминов термина
-    AddSubtermToList(term^.Subterms, subterm);
+    if subterm = nil then
+    begin
+      // Создаем новый подтермин
+      newSubterm := CreateSubterm(SubtermName, PageNumber);
+      
+      // Добавляем подтермин в хеш-таблицу
+      index := HashFunction(SubtermName);
+      newSubterm^.Next := Dict.Subterms[index];
+      Dict.Subterms[index] := newSubterm;
+      
+      // Добавляем имя термина в список родительских терминов подтермина
+      AddString(newSubterm^.ParentTerms, TermName);
+      
+      // Добавляем подтермин в список подтерминов термина
+      AddSubtermToList(term^.Subterms, newSubterm);
+    end
+    else
+    begin
+      // Если подтермин уже существует, добавляем имя термина в список родительских терминов
+      AddString(subterm^.ParentTerms, TermName);
+      
+      // Добавляем подтермин в список подтерминов термина
+      AddSubtermToList(term^.Subterms, subterm);
+    end;
   end;
 end;
 
@@ -253,37 +258,37 @@ var
 begin
   // Находим родительский подтермин
   parentSubterm := FindSubterm(Dict, ParentSubtermName);
-  if parentSubterm = nil then
-    Exit;
-  
-  // Проверяем, существует ли уже подтермин с таким именем
-  subterm := FindSubterm(Dict, SubtermName);
-  
-  if subterm = nil then
+  if parentSubterm <> nil then
   begin
-    // Создаем новый подтермин
-    newSubterm := CreateSubterm(SubtermName, PageNumber);
+    // Проверяем, существует ли уже подтермин с таким именем
+    subterm := FindSubterm(Dict, SubtermName);
     
-    // Добавляем подтермин в хеш-таблицу
-    index := HashFunction(SubtermName);
-    newSubterm^.Next := Dict.Subterms[index];
-    Dict.Subterms[index] := newSubterm;
-    
-    // Добавляем имена родительских терминов в список родительских терминов подтермина
-    for i := 0 to parentSubterm^.ParentTerms^.Count - 1 do
-      AddString(newSubterm^.ParentTerms, parentSubterm^.ParentTerms^.Items[i]);
-    
-    // Добавляем подтермин в список дочерних подтерминов родительского подтермина
-    AddSubtermToList(parentSubterm^.Children, newSubterm);
-  end
-  else
-  begin
-    // Если подтермин уже существует, добавляем имена родительских терминов в список родительских терминов
-    for i := 0 to parentSubterm^.ParentTerms^.Count - 1 do
-      AddString(subterm^.ParentTerms, parentSubterm^.ParentTerms^.Items[i]);
-    
-    // Добавляем подтермин в список дочерних подтерминов родительского подтермина
-    AddSubtermToList(parentSubterm^.Children, subterm);
+    if subterm = nil then
+    begin
+      // Создаем новый подтермин
+      newSubterm := CreateSubterm(SubtermName, PageNumber);
+      
+      // Добавляем подтермин в хеш-таблицу
+      index := HashFunction(SubtermName);
+      newSubterm^.Next := Dict.Subterms[index];
+      Dict.Subterms[index] := newSubterm;
+      
+      // Добавляем имена родительских терминов в список родительских терминов подтермина
+      for i := 0 to parentSubterm^.ParentTerms^.Count - 1 do
+        AddString(newSubterm^.ParentTerms, parentSubterm^.ParentTerms^.Items[i]);
+      
+      // Добавляем подтермин в список дочерних подтерминов родительского подтермина
+      AddSubtermToList(parentSubterm^.Children, newSubterm);
+    end
+    else
+    begin
+      // Если подтермин уже существует, добавляем имена родительских терминов в список родительских терминов
+      for i := 0 to parentSubterm^.ParentTerms^.Count - 1 do
+        AddString(subterm^.ParentTerms, parentSubterm^.ParentTerms^.Items[i]);
+      
+      // Добавляем подтермин в список дочерних подтерминов родительского подтермина
+      AddSubtermToList(parentSubterm^.Children, subterm);
+    end;
   end;
 end;
 
@@ -299,19 +304,16 @@ begin
   
   // Находим подтермин
   subterm := FindSubterm(Dict, SubtermName);
-  if subterm = nil then
+  if subterm <> nil then
   begin
-    FindTermsBySubterm := result;
-    Exit;
-  end;
-  
-  // Для каждого родительского термина подтермина
-  for i := 0 to subterm^.ParentTerms^.Count - 1 do
-  begin
-    // Находим термин
-    term := FindTerm(Dict, subterm^.ParentTerms^.Items[i]);
-    if term <> nil then
-      AddTermToList(result, term);
+    // Для каждого родительского термина подтермина
+    for i := 0 to subterm^.ParentTerms^.Count - 1 do
+    begin
+      // Находим термин
+      term := FindTerm(Dict, subterm^.ParentTerms^.Items[i]);
+      if term <> nil then
+        AddTermToList(result, term);
+    end;
   end;
   
   FindTermsBySubterm := result;
@@ -328,18 +330,15 @@ begin
   
   // Находим термин
   term := FindTerm(Dict, TermName);
-  if term = nil then
+  if term <> nil then
   begin
-    FindSubtermsByTerm := result;
-    Exit;
+    // Копируем список подтерминов термина
+    SetLength(result^.Items, term^.Subterms^.Count);
+    result^.Count := term^.Subterms^.Count;
+    
+    for i := 0 to term^.Subterms^.Count - 1 do
+      result^.Items[i] := term^.Subterms^.Items[i];
   end;
-  
-  // Копируем список подтерминов термина
-  SetLength(result^.Items, term^.Subterms^.Count);
-  result^.Count := term^.Subterms^.Count;
-  
-  for i := 0 to term^.Subterms^.Count - 1 do
-    result^.Items[i] := term^.Subterms^.Items[i];
   
   FindSubtermsByTerm := result;
 end;

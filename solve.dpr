@@ -2,9 +2,9 @@ program Solve;
 
 uses
   SysUtils,
-  Types in 'types.pas',
-  Utils in 'utils.pas',
-  Dictionary in 'dictionary.pas';
+  Types in 'src/types.dpr',
+  Utils in 'src/utils.dpr',
+  Dictionary in 'src/dictionary.dpr';
 
 // Вывод разделительной линии
 procedure PrintSeparator;
@@ -38,8 +38,11 @@ var
   value: Integer;
   validInput: Boolean;
 begin
-  repeat
-    validInput := False;
+  validInput := False;
+  value := MinValue; // Значение по умолчанию
+  
+  while not validInput do
+  begin
     Write(Prompt);
     ReadLn(s);
     
@@ -59,8 +62,7 @@ begin
       WriteLn('Ошибка: Число должно быть в диапазоне от ', MinValue, ' до ', MaxValue, '.')
     else
       validInput := True;
-      
-  until validInput;
+  end;
   
   SafeReadInteger := value;
 end;
@@ -69,8 +71,13 @@ end;
 function SafeReadString(const Prompt: string): string;
 var
   s: string;
+  validInput: Boolean;
 begin
-  repeat
+  validInput := False;
+  s := '';
+  
+  while not validInput do
+  begin
     Write(Prompt);
     ReadLn(s);
     
@@ -78,9 +85,10 @@ begin
     s := Trim(s);
     
     if s = '' then
-      WriteLn('Ошибка: Пустой ввод. Пожалуйста, введите текст.');
-      
-  until s <> '';
+      WriteLn('Ошибка: Пустой ввод. Пожалуйста, введите текст.')
+    else
+      validInput := True;
+  end;
   
   SafeReadString := s;
 end;
@@ -102,7 +110,9 @@ begin
   // Заполнение словаря примерами
   FillDictionaryWithExamples(Dict);
   
-  repeat
+  choice := -1;
+  while choice <> 0 do
+  begin
     PrintMenuHeader('СЛОВАРЬ ЯЗЫКОВ ПРОГРАММИРОВАНИЯ');
     WriteLn('1. Показать словарь (сортировка по алфавиту)');
     WriteLn('2. Показать словарь (сортировка по номеру страницы)');
@@ -204,7 +214,7 @@ begin
         WaitForKey;
       end;
     end;
-  until choice = 0;
+  end;
   
   // Освобождаем память
   FreeDictionary(Dict);
@@ -215,7 +225,7 @@ procedure DemoHashEfficiency;
 var
   Dict: TDictionary;
   i: Integer;
-  key, value: string;
+  key: string;
   startTime, endTime: TDateTime;
   searchCount, foundCount: Integer;
 begin
@@ -284,7 +294,9 @@ var
 begin
   Randomize;
   
-  repeat
+  choice := -1;
+  while choice <> 0 do
+  begin
     PrintMenuHeader('ГЛАВНОЕ МЕНЮ');
     WriteLn('1. Словарь языков программирования');
     WriteLn('2. Эффективность хеширования');
@@ -297,7 +309,7 @@ begin
       1: DemoDictionary;
       2: DemoHashEfficiency;
     end;
-  until choice = 0;
+  end;
   
   WriteLn('Программа завершена');
 end.

@@ -2,3 +2,4 @@
 bin_*
 .DS_Store
 .vscode
+*.ppu

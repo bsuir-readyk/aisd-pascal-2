@@ -81,16 +81,24 @@ end;
 procedure AddString(List: PStringList; const Str: string);
 var
   i: Integer;
+  found: Boolean;
 begin
   // Проверяем, есть ли уже такая строка в списке
+  found := False;
   for i := 0 to List^.Count - 1 do
     if List^.Items[i] = Str then
-      Exit;
+    begin
+      found := True;
+      break;
+    end;
   
-  // Добавляем строку
-  SetLength(List^.Items, List^.Count + 1);
-  List^.Items[List^.Count] := Str;
-  Inc(List^.Count);
+  // Если строка не найдена, добавляем ее
+  if not found then
+  begin
+    SetLength(List^.Items, List^.Count + 1);
+    List^.Items[List^.Count] := Str;
+    Inc(List^.Count);
+  end;
 end;
 
 // Освобождение памяти, занятой списком строк
@@ -115,16 +123,24 @@ end;
 procedure AddSubtermToList(List: PSubtermList; Subterm: PSubterm);
 var
   i: Integer;
+  found: Boolean;
 begin
   // Проверяем, есть ли уже такой подтермин в списке
+  found := False;
   for i := 0 to List^.Count - 1 do
     if List^.Items[i] = Subterm then
-      Exit;
+    begin
+      found := True;
+      break;
+    end;
   
-  // Добавляем подтермин
-  SetLength(List^.Items, List^.Count + 1);
-  List^.Items[List^.Count] := Subterm;
-  Inc(List^.Count);
+  // Если подтермин не найден, добавляем его
+  if not found then
+  begin
+    SetLength(List^.Items, List^.Count + 1);
+    List^.Items[List^.Count] := Subterm;
+    Inc(List^.Count);
+  end;
 end;
 
 // Освобождение памяти, занятой списком подтерминов
@@ -149,16 +165,24 @@ end;
 procedure AddTermToList(List: PTermList; Term: PTerm);
 var
   i: Integer;
+  found: Boolean;
 begin
   // Проверяем, есть ли уже такой термин в списке
+  found := False;
   for i := 0 to List^.Count - 1 do
     if List^.Items[i] = Term then
-      Exit;
+    begin
+      found := True;
+      break;
+    end;
   
-  // Добавляем термин
-  SetLength(List^.Items, List^.Count + 1);
-  List^.Items[List^.Count] := Term;
-  Inc(List^.Count);
+  // Если термин не найден, добавляем его
+  if not found then
+  begin
+    SetLength(List^.Items, List^.Count + 1);
+    List^.Items[List^.Count] := Term;
+    Inc(List^.Count);
+  end;
 end;
 
 // Освобождение памяти, занятой списком терминов
