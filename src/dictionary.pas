@@ -32,6 +32,9 @@ procedure AddSubtermToTerm(var Dict: TDictionary; const TermName, SubtermName: s
 // Добавление подтермина к подтермину
 procedure AddSubtermToSubterm(var Dict: TDictionary; const ParentSubtermName, SubtermName: string; PageNumber: Integer);
 
+// Удаление термина из словаря
+function DeleteTerm(var Dict: TDictionary; const Name: string): Boolean;
+
 // Поиск всех терминов, содержащих указанный подтермин
 function FindTermsBySubterm(const Dict: TDictionary; const SubtermName: string): PTermList;
 
@@ -289,6 +292,81 @@ begin
       // Добавляем подтермин в список дочерних подтерминов родительского подтермина
       AddSubtermToList(parentSubterm^.Children, subterm);
     end;
+  end;
+end;
+
+// Удаление термина из словаря
+function DeleteTerm(var Dict: TDictionary; const Name: string): Boolean;
+var
+  index: Integer;
+  current, prev: PTerm;
+  subterm: PSubterm;
+  i, j, k: Integer;
+  found: Boolean;
+begin
+  // Инициализация результата
+  DeleteTerm := False;
+  
+  // Вычисляем индекс хеш-таблицы
+  index := HashFunction(Name);
+  
+  // Ищем термин в хеш-таблице
+  current := Dict.Terms[index];
+  prev := nil;
+  found := False;
+  
+  while (current <> nil) and not found do
+  begin
+    if current^.Name = Name then
+      found := True
+    else
+    begin
+      prev := current;
+      current := current^.Next;
+    end;
+  end;
+  
+  // Если термин найден, удаляем его
+  if found then
+  begin
+    // Удаляем ссылки на термин из всех подтерминов
+    for i := 0 to TABLE_SIZE - 1 do
+    begin
+      subterm := Dict.Subterms[i];
+      while subterm <> nil do
+      begin
+        // Проверяем, есть ли имя термина в списке родительских терминов подтермина
+        for j := 0 to subterm^.ParentTerms^.Count - 1 do
+        begin
+          if subterm^.ParentTerms^.Items[j] = Name then
+          begin
+            // Удаляем имя термина из списка родительских терминов
+            for k := j to subterm^.ParentTerms^.Count - 2 do
+              subterm^.ParentTerms^.Items[k] := subterm^.ParentTerms^.Items[k + 1];
+            
+            Dec(subterm^.ParentTerms^.Count);
+            SetLength(subterm^.ParentTerms^.Items, subterm^.ParentTerms^.Count);
+            
+            // Прерываем цикл, так как имя термина уже удалено
+            break;
+          end;
+        end;
+        
+        subterm := subterm^.Next;
+      end;
+    end;
+    
+    // Удаляем термин из хеш-таблицы
+    if prev = nil then
+      Dict.Terms[index] := current^.Next
+    else
+      prev^.Next := current^.Next;
+    
+    // Освобождаем память, занятую термином
+    FreeTerm(current);
+    
+    // Устанавливаем результат
+    DeleteTerm := True;
   end;
 end;
 

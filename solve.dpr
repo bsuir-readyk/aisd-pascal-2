@@ -100,6 +100,7 @@ var
   choice: Integer;
   termName, subtermName: string;
   pageNumber: Integer;
+  term: PTerm;
   terms: PTermList;
   subterms: PSubtermList;
   i: Integer;
@@ -121,10 +122,11 @@ begin
     WriteLn('5. Добавить подтермин к подтермину');
     WriteLn('6. Найти термин по подтермину');
     WriteLn('7. Найти подтермины термина');
+    WriteLn('8. Удалить термин');
     WriteLn('0. Выход');
     
     // Безопасный ввод выбора пункта меню
-    choice := SafeReadInteger('Выберите действие: ', 0, 7);
+    choice := SafeReadInteger('Выберите действие: ', 0, 8);
     
     case choice of
       1: begin
@@ -211,6 +213,19 @@ begin
         end;
         
         FreeSubtermList(subterms);
+        WaitForKey;
+      end;
+
+      8: begin
+        PrintMenuHeader('УДАЛЕНИЕ ТЕРМИНА');
+        termName := SafeReadString('Введите название языка программирования для удаления: ');
+        PrintSeparator;
+        
+        if DeleteTerm(Dict, termName) then
+          WriteLn('Результат: Термин "', termName, '" успешно удален!')
+        else
+          WriteLn('Результат: Термин "', termName, '" не найден!');
+        
         WaitForKey;
       end;
     end;
